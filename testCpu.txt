@@ -1,0 +1,74 @@
+package MOTO;
+
+public class testCpu {
+
+    public int A, B, D;
+    public int S, U;
+    public int X, Y;
+    public int H, N;
+    public int Z, V, C;
+
+    public void updateFlags(int result, int size) {
+        // Mask the result to the specified size (8-bit or 16-bit)
+        int mask = (size == 8) ? 0xFF : 0xFFFF;
+        result &= mask;
+
+        // Update Negative (N)
+        N = (result & (1 << (size - 1))) != 0 ? 1 : 0;
+
+        // Update Zero (Z)
+        Z = (result == 0) ? 1 : 0;
+
+        // Overflow and Carry would be updated separately based on the operation
+        // They require knowledge of operands and operation type (add/subtract)
+    }
+    public testCpu(int memorySize)
+    {
+        A = B = D = 0;
+        S = U = 0;
+        X = Y = 0;
+        H = N = Z = V = C = 0;
+
+    }
+    public int getRegister(int reg) {
+        switch (reg) {
+            case 0: return A;
+            case 1: return B;
+            case 2: return D;
+            case 3: return X;
+            case 4: return Y;
+            case 5: return S;
+            case 6: return U;
+            default: throw new IllegalArgumentException("Invalid register code: " + reg);
+        }
+    }
+
+    public void setRegister(int reg, int value) {
+        switch (reg) {
+            case 0: A = value; break;
+            case 1: B = value; break;
+            case 2: D = value; break;
+            case 3: X = value; break;
+            case 4: Y = value; break;
+            case 5: S = value; break;
+            case 6: U = value; break;
+            default: throw new IllegalArgumentException("Invalid register code: " + reg);
+        }
+    }
+    public void pushToStack(int stackPointer, int value) {
+        stackPointer -= 2; // Decrement stack pointer by 2 (16-bit value)
+        // Simulate pushing value to memory (e.g., memory[stackPointer] = value)
+        System.out.printf("Pushed value 0x%04X to stack at 0x%04X%n", value, stackPointer);
+    }
+
+    public int pullFromStack(int stackPointer) {
+        // Simulate pulling value from memory (e.g., value = memory[stackPointer])
+        int value = 0; // Replace with actual memory access logic
+        System.out.printf("Pulled value 0x%04X from stack at 0x%04X%n", value, stackPointer);
+        stackPointer += 2; // Increment stack pointer by 2 (16-bit value)
+        return value;
+    }
+
+
+}
+

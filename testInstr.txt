@@ -1,0 +1,37 @@
+package MOTO;
+
+public class testInstr {
+    private String mnemonic;
+    private int opcode;
+    private int bytes;
+    private int cycles;
+    private InstructionExecutor executor;
+    // Interface for execution logic
+    @FunctionalInterface
+    interface InstructionExecutor {
+        void execute(testCpu cpu, int operand);
+    }
+    // Constructor
+    public testInstr(String mnemonic, int opcode, int bytes, int cycles, String ccEffects,InstructionExecutor executor) {
+        this.mnemonic=mnemonic;
+        this.opcode = opcode;
+        this.bytes = bytes;
+        this.cycles = cycles;
+        this.executor = executor;
+    }
+    // Execute the instruction
+    public void execute(testCpu cpu, int operand) {
+        executor.execute(cpu, operand);
+    }
+    // ToString for display
+    @Override
+    public String toString() {
+        return String.format(
+                "Mnemonic: %s, Opcode: 0x%02X, Bytes: %d, Cycles: %d, Function: %s",
+                getMnemonic(), opcode, bytes, cycles
+        );
+    }
+    public String getMnemonic() {
+        return mnemonic;
+    }
+}

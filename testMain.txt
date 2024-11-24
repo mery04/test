@@ -1,0 +1,369 @@
+package MOTO;
+
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class testMain {
+
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+
+        testCpu cpu = new testCpu(1024);
+
+        testInstr[] instructions = {
+
+                // ADCA: Add with carry to A
+                new testInstr("ADCA", 0x89, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A + operand + cpuInstance.C;
+                    cpuInstance.A = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.A & 0x0F) + (operand & 0x0F) + cpuInstance.C) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.A ^ operand) & (cpuInstance.A ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result > 0xFF) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // ADCB: Add with carry to B
+                new testInstr("ADCB", 0xC9, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B + operand + cpuInstance.C;
+                    cpuInstance.B = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.B & 0x0F) + (operand & 0x0F) + cpuInstance.C) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.B ^ operand) & (cpuInstance.B ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result > 0xFF) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // ADDA: Add to A
+                new testInstr("ADDA", 0x8B, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A + operand;
+                    cpuInstance.A = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.A & 0x0F) + (operand & 0x0F)) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.A ^ operand) & (cpuInstance.A ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result > 0xFF) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // ADDB: Add to B
+                new testInstr("ADDB", 0xCB, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B + operand;
+                    cpuInstance.B = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.B & 0x0F) + (operand & 0x0F)) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.B ^ operand) & (cpuInstance.B ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result > 0xFF) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // ADDD: Add to D
+                new testInstr("ADDD", 0xC3, 3, 4, (cpuInstance, operand) -> {
+                    int result = cpuInstance.D + operand;
+                    cpuInstance.D = result & 0xFFFF;
+                    cpuInstance.V = ((cpuInstance.D ^ operand) & (cpuInstance.D ^ result) & 0x8000) != 0 ? 1 : 0;
+                    cpuInstance.C = (result > 0xFFFF) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 16);
+                }),
+
+                // ANDA: Logical AND with A
+                new testInstr("ANDA", 0x84, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.A &= operand;
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                // ANDB: Logical AND with B
+                new testInstr("ANDB", 0xC4, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.B &= operand;
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+
+                // ANDCC: Logical AND with condition codes
+                new testInstr("ANDCC", 0x1C, 2, 3, (cpuInstance, operand) -> {
+                    cpuInstance.H &= (operand >> 0) & 1;
+                    cpuInstance.N &= (operand >> 1) & 1;
+                    cpuInstance.Z &= (operand >> 2) & 1;
+                    cpuInstance.V &= (operand >> 3) & 1;
+                    cpuInstance.C &= (operand >> 4) & 1;
+                }),
+
+                // ASLA: Arithmetic shift left A
+                new testInstr("ASLA", 0x48, 1, 2, (cpuInstance, operand) -> {
+                    cpuInstance.C = (cpuInstance.A >> 7) & 1;
+                    cpuInstance.A = (cpuInstance.A << 1) & 0xFF;
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                // ASLB: Arithmetic shift left B
+                new testInstr("ASLB", 0x58, 1, 2, (cpuInstance, operand) -> {
+                    cpuInstance.C = (cpuInstance.B >> 7) & 1;
+                    cpuInstance.B = (cpuInstance.B << 1) & 0xFF;
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+
+                // ASL: Arithmetic shift left memory (placeholder)
+                new testInstr("ASL", 0x08, 2, 4, (cpuInstance, operand) -> {
+                    System.out.println("ASL for memory not implemented.");
+                }),
+
+                // BITA: Test bits with A
+                new testInstr("BITA", 0x85, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A & operand;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // BITB: Test bits with B
+                new testInstr("BITB", 0xC5, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B & operand;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                // CMPA: Compare A with operand
+                new testInstr("CMPA", 0x81, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A - operand;
+                    cpuInstance.updateFlags(result, 8);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPB: Compare B with operand
+                new testInstr("CMPB", 0xC1, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B - operand;
+                    cpuInstance.updateFlags(result, 8);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPD: Compare D with operand
+                new testInstr("CMPD", 0x1083, 4, 5, (cpuInstance, operand) -> {
+                    int result = cpuInstance.D - operand;
+                    cpuInstance.updateFlags(result, 16);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPS: Compare S with operand
+                new testInstr("CMPS", 0x118C, 4, 5, (cpuInstance, operand) -> {
+                    int result = cpuInstance.S - operand;
+                    cpuInstance.updateFlags(result, 16);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPU: Compare U with operand
+                new testInstr("CMPU", 0x1183, 4, 5, (cpuInstance, operand) -> {
+                    int result = cpuInstance.U - operand;
+                    cpuInstance.updateFlags(result, 16);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPX: Compare X with operand
+                new testInstr("CMPX", 0x8C, 3, 4, (cpuInstance, operand) -> {
+                    int result = cpuInstance.X - operand;
+                    cpuInstance.updateFlags(result, 16);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CMPY: Compare Y with operand
+                new testInstr("CMPY", 0x108C, 4, 5, (cpuInstance, operand) -> {
+                    int result = cpuInstance.Y - operand;
+                    cpuInstance.updateFlags(result, 16);
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                }),
+
+                // CWAI: Halt CPU until interrupt
+                new testInstr("CWAI", 0x3C, 2, 4, (cpuInstance, operand) -> {
+                    System.out.println("CPU halted (CWAI).");
+                }),
+                // Logical Operations
+                new testInstr("EORA", 0x88, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.A ^= operand;
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                new testInstr("EORB", 0xC8, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.B ^= operand;
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+                // Register Transfer
+                new testInstr("EXG", 0x1E, 2, 8, (cpuInstance, operand) -> {
+                    int regSrc = (operand >> 4) & 0xF;
+                    int regDst = operand & 0xF;
+                    int temp = cpuInstance.getRegister(regSrc);
+                    cpuInstance.setRegister(regSrc, cpuInstance.getRegister(regDst));
+                    cpuInstance.setRegister(regDst, temp);
+                }),
+                // Load Instructions
+                new testInstr("LDA", 0x86, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.A = operand & 0xFF; // Load operand into A (8-bit)
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                new testInstr("LDB", 0xC6, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.B = operand & 0xFF; // Load operand into B (8-bit)
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+
+                new testInstr("LDD", 0xCC, 3, 3, (cpuInstance, operand) -> {
+                    cpuInstance.D = operand & 0xFFFF; // Load operand into D (16-bit)
+                    cpuInstance.updateFlags(cpuInstance.D, 16);
+                }),
+
+                new testInstr("LDS", 0x10CE, 4, 4, (cpuInstance, operand) -> {
+                    cpuInstance.S = operand & 0xFFFF; // Load operand into stack pointer S (16-bit)
+                    cpuInstance.updateFlags(cpuInstance.S, 16);
+                }),
+
+                new testInstr("LDU", 0xCE, 3, 3, (cpuInstance, operand) -> {
+                    cpuInstance.U = operand & 0xFFFF; // Load operand into user stack pointer U (16-bit)
+                    cpuInstance.updateFlags(cpuInstance.U, 16);
+                }),
+
+                new testInstr("LDX", 0x8E, 3, 3, (cpuInstance, operand) -> {
+                    cpuInstance.X = operand & 0xFFFF; // Load operand into X (16-bit)
+                    cpuInstance.updateFlags(cpuInstance.X, 16);
+                }),
+
+                new testInstr("LDY", 0x108E, 4, 4, (cpuInstance, operand) -> {
+                    cpuInstance.Y = operand & 0xFFFF; // Load operand into Y (16-bit)
+                    cpuInstance.updateFlags(cpuInstance.Y, 16);
+                }),
+
+                // Logical Shift Left Instructions
+                new testInstr("LSLA", 0x48, 1, 2, (cpuInstance, operand) -> {
+                    cpuInstance.C = (cpuInstance.A >> 7) & 1; // Carry gets the MSB
+                    cpuInstance.A = (cpuInstance.A << 1) & 0xFF; // Shift left and keep 8 bits
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                new testInstr("LSLB", 0x58, 1, 2, (cpuInstance, operand) -> {
+                    cpuInstance.C = (cpuInstance.B >> 7) & 1; // Carry gets the MSB
+                    cpuInstance.B = (cpuInstance.B << 1) & 0xFF; // Shift left and keep 8 bits
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+
+                new testInstr("LSL", 0x08, 2, 4, (cpuInstance, operand) -> {
+                    System.out.println("LSL (Logical Shift Left for memory) not implemented.");
+                    // Placeholder for memory operation
+                }),
+                new testInstr("ORA", 0x8A, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.A |= operand;
+                    cpuInstance.updateFlags(cpuInstance.A, 8);
+                }),
+
+                new testInstr("ORB", 0xCA, 2, 2, (cpuInstance, operand) -> {
+                    cpuInstance.B |= operand;
+                    cpuInstance.updateFlags(cpuInstance.B, 8);
+                }),
+
+                new testInstr("ORCC", 0x1A, 2, 3, (cpuInstance, operand) -> {
+                    cpuInstance.C |= (operand >> 4) & 1;
+                    cpuInstance.V |= (operand >> 3) & 1;
+                    cpuInstance.N |= (operand >> 2) & 1;
+                    cpuInstance.Z |= (operand >> 1) & 1;
+                    cpuInstance.H |= (operand >> 0) & 1;
+                }),
+                // Stack Operations
+                new testInstr("PSHS", 0x34, 2, 5, (cpuInstance, operand) -> {
+                    if ((operand & 0x80) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.PC);
+                    if ((operand & 0x40) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.U);
+                    if ((operand & 0x20) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.Y);
+                    if ((operand & 0x10) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.X);
+                    if ((operand & 0x08) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.D);
+                    if ((operand & 0x04) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.B);
+                    if ((operand & 0x02) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.A);
+                    if ((operand & 0x01) != 0) cpuInstance.pushToStack(cpuInstance.S, cpuInstance.C);
+                }),
+
+                new testInstr("PSHU", 0x36, 2, 5, (cpuInstance, operand) -> {
+                    if ((operand & 0x80) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.PC);
+                    if ((operand & 0x40) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.U);
+                    if ((operand & 0x20) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.Y);
+                    if ((operand & 0x10) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.X);
+                    if ((operand & 0x08) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.D);
+                    if ((operand & 0x04) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.B);
+                    if ((operand & 0x02) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.A);
+                    if ((operand & 0x01) != 0) cpuInstance.pushToStack(cpuInstance.U, cpuInstance.C);
+                }),
+
+                new testInstr("PULS", 0x35, 2, 5, (cpuInstance, operand) -> {
+                    if ((operand & 0x01) != 0) cpuInstance.C = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x02) != 0) cpuInstance.A = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x04) != 0) cpuInstance.B = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x08) != 0) cpuInstance.D = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x10) != 0) cpuInstance.X = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x20) != 0) cpuInstance.Y = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x40) != 0) cpuInstance.U = cpuInstance.pullFromStack(cpuInstance.S);
+                    if ((operand & 0x80) != 0) cpuInstance.PC = cpuInstance.pullFromStack(cpuInstance.S);
+                }),
+
+                new testInstr("PULU", 0x37, 2, 5, (cpuInstance, operand) -> {
+                    if ((operand & 0x01) != 0) cpuInstance.C = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x02) != 0) cpuInstance.A = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x04) != 0) cpuInstance.B = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x08) != 0) cpuInstance.D = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x10) != 0) cpuInstance.X = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x20) != 0) cpuInstance.Y = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x40) != 0) cpuInstance.U = cpuInstance.pullFromStack(cpuInstance.U);
+                    if ((operand & 0x80) != 0) cpuInstance.PC = cpuInstance.pullFromStack(cpuInstance.U);
+                }),
+                // Subtraction Instructions
+                new testInstr("SBCA", 0x82, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A - operand - cpuInstance.C;
+                    cpuInstance.A = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.A & 0x0F) - (operand & 0x0F) - cpuInstance.C) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.A ^ operand) & (cpuInstance.A ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                new testInstr("SBCB", 0xC2, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B - operand - cpuInstance.C;
+                    cpuInstance.B = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.B & 0x0F) - (operand & 0x0F) - cpuInstance.C) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.B ^ operand) & (cpuInstance.B ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                new testInstr("SUBA", 0x80, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.A - operand;
+                    cpuInstance.A = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.A & 0x0F) - (operand & 0x0F)) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.A ^ operand) & (cpuInstance.A ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                new testInstr("SUBB", 0xC0, 2, 2, (cpuInstance, operand) -> {
+                    int result = cpuInstance.B - operand;
+                    cpuInstance.B = result & 0xFF;
+                    cpuInstance.H = (((cpuInstance.B & 0x0F) - (operand & 0x0F)) & 0x10) != 0 ? 1 : 0;
+                    cpuInstance.V = ((cpuInstance.B ^ operand) & (cpuInstance.B ^ result) & 0x80) != 0 ? 1 : 0;
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 8);
+                }),
+
+                new testInstr("SUBD", 0x83, 3, 4, (cpuInstance, operand) -> {
+                    int result = cpuInstance.D - operand;
+                    cpuInstance.D = result & 0xFFFF;
+                    cpuInstance.V = ((cpuInstance.D ^ operand) & (cpuInstance.D ^ result) & 0x8000) != 0 ? 1 : 0;
+                    cpuInstance.C = (result < 0) ? 1 : 0;
+                    cpuInstance.updateFlags(result, 16);
+                }),
+                // TFR: Transfer register
+                new testInstr("TFR", 0x1F, 2, 6, (cpuInstance, operand) -> {
+                    int regSrc = (operand >> 4) & 0xF;
+                    int regDst = operand & 0xF;
+                    int value = cpuInstance.getRegister(regSrc);
+                    cpuInstance.setRegister(regDst, value);
+                })
+        };
+
+
+        ArrayList<String> mnemo = new ArrayList<>();
+        for (int i = 0; i < instructions.length; i++) {
+            mnemo.add(instructions[i].getMnemonic());
+        }
+
+
+        while(true) {
+            System.out.println("CPU State: A = " + cpu.A + ", B = " + cpu.B );
+            String[] a = sc.nextLine().split(" ");
+            int operand = Integer.parseInt(a[1].substring(2),16);
+            instructions[mnemo.indexOf(a[0])].execute(cpu, operand);
+        }
+    }
+}
