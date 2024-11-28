@@ -7,6 +7,7 @@ public class testCpu {
     public int X, Y;
     public int H, N;
     public int Z, V, C;
+    public int PC;
 
     public void updateFlags(int result, int size) {
         // Mask the result to the specified size (8-bit or 16-bit)
